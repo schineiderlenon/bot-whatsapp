@@ -5,61 +5,63 @@ const axios = require("axios");
 const app = express();
 app.use(express.json());
 
-// Pega as chaves das configurações do Render
+// Pega as chaves do ambiente (Render)
 const { OPENAI_API_KEY, ZAPI_TOKEN, ZAPI_INSTANCE } = process.env;
 
-// Rota para o navegador (Evita o Not Found)
+// Rota para o navegador não dar "Not Found"
 app.get("/", (req, res) => {
     res.send("O Assistente Financeiro está online! 🚀");
 });
 
-// Rota principal do WhatsApp (Webhook)
+// Rota que recebe as mensagens do WhatsApp
 app.post("/webhook", async (req, res) => {
-    // 1. Pega os dados da mensagem
-    const isGroup = req.body.isGroup; // Verifica se é grupo
+    const isGroup = req.body.isGroup;
     const message = req.body.text?.message;
     const phone = req.body.phone;
 
-    // 2. A TRAVA: Se for grupo, responde "OK" pro servidor mas não faz nada
+    // IGNORA GRUPOS: Para economizar seus créditos
     if (isGroup === true) {
         console.log("Mensagem de grupo ignorada.");
-        return res.sendStatus(200); 
+        return res.sendStatus(200);
     }
 
-    // ... o resto do seu código continua aqui embaixo ...
+    if (!message || !phone) return res.sendStatus(200);
 
     try {
-        // Envia para a OpenAI (Versão Corrigida)
+        console.log("Chegou mensagem de: " + phone);
+
+        // Chamada para a OpenAI com modelo estável e limpeza de espaços (.trim)
         const response = await axios.post("https://api.openai.com/v1/chat/completions", {
-            model: "gpt-3.5-turbo", // Mudamos para um modelo que toda conta nova aceita
+            model: "gpt-3.5-turbo", 
             messages: [
-                { role: "system", content: "Você é um assistente financeiro." },
+                { role: "system", content: "Você é um assistente financeiro pessoal. Responda de forma curta." },
                 { role: "user", content: message }
             ]
         }, {
             headers: { 
-                "Authorization": `Bearer ${OPENAI_API_KEY.trim()}`, // O .trim() remove espaços invisíveis
+                "Authorization": `Bearer ${OPENAI_API_KEY.trim()}`,
                 "Content-Type": "application/json"
             }
         });
 
         const aiReply = response.data.choices[0].message.content;
 
-        // Envia de volta para o WhatsApp via Z-API
+        // Envia a resposta de volta para o WhatsApp via Z-API
         await axios.post(`https://api.z-api.io/instances/${ZAPI_INSTANCE}/token/${ZAPI_TOKEN}/send-text`, {
             phone: phone,
             message: aiReply
         });
 
-        console.log("Resposta enviada com sucesso!");
+        console.log("Sucesso! Resposta enviada.");
+
     } catch (error) {
-        console.error("Erro ao processar:", error.message);
+        // Log detalhado para sabermos exatamente o que deu errado
+        console.error("Erro no processamento:", error.response?.data || error.message);
     }
 
     res.sendStatus(200);
 });
 
-// Porta automática do Render (Sempre por último)
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
