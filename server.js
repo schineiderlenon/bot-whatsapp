@@ -43,6 +43,8 @@ app.post("/webhook", async (req, res) => {
 
     res.sendStatus(200);
 });
-
+// Rota para o navegador não dar "Not Found"
+app.get("/", (req, res) => {
+    res.send("O Assistente Financeiro está online! 🚀");
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor ativo na porta ${PORT}`));
