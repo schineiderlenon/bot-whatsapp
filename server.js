@@ -15,14 +15,18 @@ app.get("/", (req, res) => {
 
 // Rota principal do WhatsApp (Webhook)
 app.post("/webhook", async (req, res) => {
-    console.log("Chegou uma mensagem no Webhook!");
-    
+    // 1. Pega os dados da mensagem
+    const isGroup = req.body.isGroup; // Verifica se é grupo
     const message = req.body.text?.message;
     const phone = req.body.phone;
 
-    if (!message || !phone) {
-        return res.sendStatus(200);
+    // 2. A TRAVA: Se for grupo, responde "OK" pro servidor mas não faz nada
+    if (isGroup === true) {
+        console.log("Mensagem de grupo ignorada.");
+        return res.sendStatus(200); 
     }
+
+    // ... o resto do seu código continua aqui embaixo ...
 
     try {
         // Envia para a OpenAI (Versão Corrigida)
