@@ -8,7 +8,7 @@ app.use(express.json());
 
 // Configurações das Variáveis de Ambiente
 const { OPENAI_API_KEY, ZAPI_TOKEN, ZAPI_INSTANCE, MONGODB_URI } = process.env;
-const MEU_CLIENT_TOKEN = "COLE_AQUI_SEU_CLIENT_TOKEN_DA_ZAPI"; // Lembre de manter seu Client Token aqui!
+const MEU_CLIENT_TOKEN = "F9bbdcb6281e64e6b83211233911df38cS"; // Lembre de manter seu Client Token aqui!
 
 // Conexão com o Banco de Dados (MongoDB)
 mongoose.connect(MONGODB_URI)
