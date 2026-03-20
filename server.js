@@ -25,15 +25,18 @@ app.post("/webhook", async (req, res) => {
     }
 
     try {
-        // Envia para a OpenAI
+        // Envia para a OpenAI (Versão Corrigida)
         const response = await axios.post("https://api.openai.com/v1/chat/completions", {
-            model: "gpt-4o-mini",
+            model: "gpt-3.5-turbo", // Mudamos para um modelo que toda conta nova aceita
             messages: [
-                { role: "system", content: "Você é um assistente financeiro pessoal. Responda de forma curta e ajude a organizar gastos." },
+                { role: "system", content: "Você é um assistente financeiro." },
                 { role: "user", content: message }
             ]
         }, {
-            headers: { Authorization: `Bearer ${OPENAI_API_KEY}` }
+            headers: { 
+                "Authorization": `Bearer ${OPENAI_API_KEY.trim()}`, // O .trim() remove espaços invisíveis
+                "Content-Type": "application/json"
+            }
         });
 
         const aiReply = response.data.choices[0].message.content;
