@@ -5,11 +5,10 @@ const axios = require("axios");
 const app = express();
 app.use(express.json());
 
-// Pega as chaves do Render
 const { OPENAI_API_KEY, ZAPI_TOKEN, ZAPI_INSTANCE } = process.env;
 
 app.get("/", (req, res) => {
-    res.send("O Assistente Financeiro está online! 🚀");
+    res.send("Assistente Financeiro Online! 🚀");
 });
 
 app.post("/webhook", async (req, res) => {
@@ -17,54 +16,46 @@ app.post("/webhook", async (req, res) => {
     const message = req.body.text?.message;
     const phone = req.body.phone;
 
-    // 1. Trava de segurança para grupos
-    if (isGroup === true) {
-        console.log("Mensagem de grupo ignorada.");
-        return res.sendStatus(200);
-    }
-
-    if (!message || !phone) return res.sendStatus(200);
+    if (isGroup === true || !message || !phone) return res.sendStatus(200);
 
     try {
-        console.log("Chegou mensagem de: " + phone);
+        console.log("Processando mensagem de: " + phone);
 
-        // 2. Chamada para a OpenAI (Limpando espaços da chave)
+        // Chamada OpenAI
         const response = await axios.post("https://api.openai.com/v1/chat/completions", {
             model: "gpt-3.5-turbo",
             messages: [
-                { role: "system", content: "Você é um assistente financeiro pessoal. Responda de forma curta e direta." },
+                { role: "system", content: "Você é um assistente financeiro curto e grosso." },
                 { role: "user", content: message }
             ]
         }, {
-            headers: { 
-                "Authorization": `Bearer ${OPENAI_API_KEY.trim()}`,
-                "Content-Type": "application/json"
-            }
+            headers: { "Authorization": `Bearer ${OPENAI_API_KEY.trim()}` }
         });
 
         const aiReply = response.data.choices[0].message.content;
-        console.log("IA respondeu: " + aiReply);
+        console.log("IA Respondeu: " + aiReply);
 
-        // 3. Envio para a Z-API (Limpando espaços do Token e Instância)
-        const zInstancia = ZAPI_INSTANCE.trim();
-        const zToken = ZAPI_TOKEN.trim();
-
-        await axios.post(`https://api.z-api.io/instances/${zInstancia}/token/${zToken}/send-text`, {
-            phone: phone,
-            message: aiReply
+        // ENVIO PARA Z-API (Formatado para evitar erro de token)
+        const urlZapi = `https://api.z-api.io/instances/${ZAPI_INSTANCE.trim()}/token/${ZAPI_TOKEN.trim()}/send-text`;
+        
+        await axios({
+            method: 'post',
+            url: urlZapi,
+            data: {
+                phone: phone,
+                message: aiReply
+            }
         });
 
-        console.log("Sucesso! Resposta enviada ao WhatsApp.");
+        console.log("Sucesso total! Resposta enviada.");
 
     } catch (error) {
-        // Exibe o erro detalhado se algo falhar
-        console.error("Erro no processamento:", error.response?.data || error.message);
+        // Se der erro, vamos ver o que a Z-API respondeu exatamente
+        console.error("Erro detalhado:", error.response?.data || error.message);
     }
 
     res.sendStatus(200);
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Rodando na porta ${PORT}`));
