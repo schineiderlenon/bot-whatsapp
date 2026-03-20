@@ -35,15 +35,16 @@ app.post("/webhook", async (req, res) => {
         const aiReply = response.data.choices[0].message.content;
         console.log("IA Respondeu: " + aiReply);
 
-        // ENVIO PARA Z-API (Formatado para evitar erro de token)
+        // ENVIO PARA Z-API (Versão com cabeçalho forçado)
         const urlZapi = `https://api.z-api.io/instances/${ZAPI_INSTANCE.trim()}/token/${ZAPI_TOKEN.trim()}/send-text`;
         
-        await axios({
-            method: 'post',
-            url: urlZapi,
-            data: {
-                phone: phone,
-                message: aiReply
+        await axios.post(urlZapi, {
+            phone: phone,
+            message: aiReply
+        }, {
+            headers: {
+                "Content-Type": "application/json",
+                "client-token": "" // Forçamos o envio de um token vazio para "satisfazer" a Z-API
             }
         });
 
